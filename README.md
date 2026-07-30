@@ -9,22 +9,46 @@ providers and want passwordless email sign-in, without running a password databa
 
 ```yaml
 authgate:
-  providers:
-    - name: google
-      issuer: https://accounts.google.com
-      audience: ${GOOGLE_CLIENT_ID}
-    - name: okta
-      issuer: https://acme.okta.com/oauth2/default
-      audience: api://default
-    - name: email          # magic link, no password anywhere
-      type: local
+  federation:
+    audience: https://api.example.com
+    providers:
+      - name: google
+        issuer: https://accounts.google.com
+        audience: ${GOOGLE_CLIENT_ID}
+        tenant: acme
+      - name: okta
+        issuer: https://acme.okta.com/oauth2/default
+        audience: api://default
+        tenant: acme
+  magic-link:                # passwordless email, no password anywhere
+    ttl: 10m
 ```
 
 Adding a provider is a config block. There is no per-provider code path.
 
-**Status: phase 2.** Passwordless email sign-in works end to end, and the resulting token verifies
-against the published JWKS with any conforming client. Federation to Google, Azure and Okta is
-phase 3. See [Roadmap](#roadmap).
+**Status: phase 3.** Passwordless email sign-in and federated sign-in both work end to end, and the
+resulting token verifies against the published JWKS with any conforming client. Roles and
+permissions are phase 4. See [Roadmap](#roadmap).
+
+## Federated sign-in
+
+The client signs in with the provider using that provider's own SDK, then exchanges the resulting
+ID token:
+
+```bash
+curl -X POST localhost:8080/auth/federated/exchange \
+  -H 'content-type: application/json' \
+  -d '{"token":"<ID token from Google, Entra, Okta, ...>"}'
+```
+
+Inbound tokens are routed by their `iss` claim to exactly one verifier, rather than tried against
+each provider in turn. Reading an unverified claim to do so is safe because it only *selects* a
+verifier — the chosen provider still checks signature, issuer and audience against its own pinned
+configuration, so a forged `iss` merely routes the token to something certain to reject it.
+
+An account is reached by `(issuer, subject)`. Never by email: an address is mutable, and it is
+asserted by whichever provider answered, so matching on it would let any provider that can claim an
+address reach an account created through a different one.
 
 ## Signing in
 
@@ -120,7 +144,9 @@ come up with:
 docker compose up -d
 ```
 
-Neither container is used yet; Postgres is wired up in phase 1 and mail in phase 2.
+Postgres is required; the mail catcher receives sign-in links in development and its web UI
+is at http://localhost:8025. Without `spring.mail.host` configured the service writes links to
+the log instead, and says so on every use.
 
 ## Roadmap
 
@@ -129,8 +155,8 @@ Neither container is used yet; Postgres is wired up in phase 1 and mail in phase
 | 0 | Gradle scaffold, CI, container build, dev compose | **done** |
 | 1 | Schema, tenants and accounts, RS256 issuer, JWKS + discovery | **done** |
 | 2 | Magic-link sign-in | **done** |
-| 3 | Federation: generic OIDC, plus Google/Azure/Okta configuration | next |
-| 4 | Role and permission model, admin API | |
+| 3 | Federation: generic OIDC, plus Google/Azure/Okta configuration | **done** |
+| 4 | Role and permission model, admin API | next |
 | 5 | Refresh rotation, revocation, reuse detection | |
 | 6 | `client-spring` starter and `demo` | |
 | 7 | Python verifier on PyPI | |

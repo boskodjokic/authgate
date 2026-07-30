@@ -30,7 +30,7 @@ class SigningKeysTest {
 
     private static AuthGateProperties propertiesWith(String pem) {
         return new AuthGateProperties(
-                "https://auth.example.test", Duration.ofMinutes(15), new AuthGateProperties.Signing(pem), null);
+                "https://auth.example.test", Duration.ofMinutes(15), new AuthGateProperties.Signing(pem), null, null);
     }
 
     @Test

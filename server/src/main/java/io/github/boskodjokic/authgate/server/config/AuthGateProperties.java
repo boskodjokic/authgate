@@ -1,6 +1,8 @@
 package io.github.boskodjokic.authgate.server.config;
 
+import io.github.boskodjokic.authgate.server.federation.FederatedProviderProperties;
 import java.time.Duration;
+import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -13,9 +15,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *     travel inside the token, so a revoked role is only truly gone once the token expires.
  * @param signing signing key material.
  * @param magicLink passwordless email sign-in.
+ * @param federation external identity providers.
  */
 @ConfigurationProperties(prefix = "authgate")
-public record AuthGateProperties(String issuer, Duration accessTokenTtl, Signing signing, MagicLink magicLink) {
+public record AuthGateProperties(
+        String issuer, Duration accessTokenTtl, Signing signing, MagicLink magicLink, Federation federation) {
 
     public AuthGateProperties {
         if (issuer == null || issuer.isBlank()) {
@@ -34,6 +38,9 @@ public record AuthGateProperties(String issuer, Duration accessTokenTtl, Signing
         }
         if (magicLink == null) {
             magicLink = new MagicLink(null, null, null, null);
+        }
+        if (federation == null) {
+            federation = new Federation(null, null);
         }
     }
 
@@ -65,6 +72,26 @@ public record AuthGateProperties(String issuer, Duration accessTokenTtl, Signing
             from = from == null || from.isBlank() ? "no-reply@localhost" : from;
             if (ttl.isNegative() || ttl.isZero()) {
                 throw new IllegalArgumentException("authgate.magic-link.ttl must be positive");
+            }
+        }
+    }
+
+    /**
+     * External identity providers this service will accept tokens from.
+     *
+     * @param audience the {@code aud} of the access token a federated exchange produces
+     * @param providers the configured providers; an empty list simply disables federation
+     */
+    public record Federation(String audience, List<FederatedProviderProperties> providers) {
+
+        public Federation {
+            providers = providers == null ? List.of() : List.copyOf(providers);
+            // Caught at startup rather than on the first exchange: without an audience the issuer
+            // would refuse to mint a token, and the failure would surface as a 500 on a request
+            // that looked perfectly valid.
+            if (!providers.isEmpty() && (audience == null || audience.isBlank())) {
+                throw new IllegalArgumentException(
+                        "authgate.federation.audience must be set when providers are configured");
             }
         }
     }

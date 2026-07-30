@@ -35,8 +35,8 @@ class AccessTokenIssuerTest {
 
     @BeforeEach
     void setUp() {
-        AuthGateProperties properties =
-                new AuthGateProperties(ISSUER, Duration.ofMinutes(15), new AuthGateProperties.Signing(null), null);
+        AuthGateProperties properties = new AuthGateProperties(
+                ISSUER, Duration.ofMinutes(15), new AuthGateProperties.Signing(null), null, null);
         keys = new SigningKeys(properties);
         issuer = new AccessTokenIssuer(properties, keys);
         account = new Account(new Tenant("acme", "Acme"), "Bosko@Example.test", "Bosko");
@@ -120,8 +120,8 @@ class AccessTokenIssuerTest {
 
     @Test
     void doesNotVerifyAgainstADifferentKey() throws Exception {
-        SigningKeys other = new SigningKeys(
-                new AuthGateProperties(ISSUER, Duration.ofMinutes(15), new AuthGateProperties.Signing(null), null));
+        SigningKeys other = new SigningKeys(new AuthGateProperties(
+                ISSUER, Duration.ofMinutes(15), new AuthGateProperties.Signing(null), null, null));
         SignedJWT jwt = SignedJWT.parse(issuer.issue(account, AUDIENCE).value());
 
         assertThat(jwt.verify(new RSASSAVerifier(

@@ -31,6 +31,28 @@ authgate:
     # /auth/magic-link/redeem — see MagicLinkController for why redemption is not a GET.
     redirect-base: http://localhost:4200/signin
     from: no-reply@localhost
+  federation:
+    # `aud` of the token a federated exchange produces.
+    audience: http://localhost:8080
+    # Every provider below is verified by the same code. There is no per-vendor branch —
+    # Google, Entra, Okta, Auth0, Cognito and Keycloak all publish the same discovery document.
+    #
+    #   - name: google
+    #     issuer: https://accounts.google.com
+    #     audience: ${GOOGLE_CLIENT_ID}
+    #     tenant: acme
+    #   - name: entra
+    #     issuer: https://login.microsoftonline.com/${TENANT_ID}/v2.0
+    #     audience: ${ENTRA_APP_ID}
+    #     tenant: acme
+    #     email-claim: preferred_username      # Entra v1 tokens put the address here
+    #   - name: okta
+    #     issuer: https://acme.okta.com/oauth2/default
+    #     audience: api://default
+    #     tenant: acme
+    #     # Only for a provider authoritative for the domain. See FederationService.
+    #     link-by-verified-email: true
+    providers: []
 
 server:
   port: 8080
