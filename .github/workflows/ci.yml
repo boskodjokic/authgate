@@ -22,6 +22,24 @@ jobs:
       # The runner has a Docker daemon, so the Testcontainers-backed tests added from phase 1
       # onward run here even though they skip on a machine without one.
       - run: ./gradlew build --no-daemon
+      # The Testcontainers suites skip themselves when no Docker daemon is present, which is the
+      # right behaviour on a developer machine and a silent loss of coverage here. CI is the only
+      # place the Flyway migration and the JPA mapping are ever checked against a real Postgres,
+      # so a skip on this runner has to be a build failure rather than a green tick.
+      - name: Fail if any test skipped
+        run: |
+          python3 - <<'PY'
+          import glob, re, sys
+          total = skipped = 0
+          for path in glob.glob('**/build/test-results/test/*.xml', recursive=True):
+              header = re.search(r'<testsuite[^>]*>', open(path).read()).group(0)
+              count = lambda key: int(re.search(key + r'="(\d+)"', header).group(1))
+              total += count('tests')
+              skipped += count('skipped')
+          print(f'{total} tests, {skipped} skipped')
+          if skipped:
+              sys.exit(f'{skipped} of {total} tests skipped on CI — Docker is expected here.')
+          PY
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
