@@ -2,6 +2,7 @@ package io.github.boskodjokic.authgate.server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * Entry point for the AuthGate identity service.
@@ -14,6 +15,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * OIDC client can consume its tokens without a bespoke SDK.
  */
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class AuthGateApplication {
 
     public static void main(String[] args) {

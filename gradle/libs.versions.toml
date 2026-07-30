@@ -1,11 +1,16 @@
 [versions]
 springBoot = "3.5.3"
+nimbusJose = "10.3"
 junit = "5.11.3"
 assertj = "3.26.3"
 testcontainers = "1.20.4"
 errorprone = "2.24.1"
 
 [libraries]
+# Versioned here rather than left to the Spring Boot BOM: Boot only manages nimbus-jose-jwt when
+# Spring Security is on the classpath, and this service uses it directly for signing.
+nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbusJose" }
+
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }

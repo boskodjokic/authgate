@@ -1,6 +1,28 @@
 spring:
   application:
     name: authgate
+  datasource:
+    url: jdbc:postgresql://localhost:5432/authgate
+    username: authgate
+    password: authgate
+  jpa:
+    hibernate:
+      # Flyway owns the schema. Hibernate is not permitted to alter it, so a mismatch between
+      # entity and migration surfaces as a startup failure rather than as a silent column added
+      # to production.
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+authgate:
+  issuer: http://localhost:8080
+  access-token-ttl: 15m
+  signing:
+    # PKCS#8 PEM. Blank generates an ephemeral key at startup, which is fine for development and
+    # broken for anything with more than one instance or more than one lifetime.
+    private-key: ${AUTHGATE_SIGNING_KEY:}
 
 server:
   port: 8080

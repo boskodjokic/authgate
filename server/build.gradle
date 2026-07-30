@@ -8,13 +8,24 @@ description = 'AuthGate identity service'
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    implementation 'org.flywaydb:flyway-core'
+    // Flyway 10 split the database dialects out of the core artifact; without this the migration
+    // fails at startup with "Unsupported Database: PostgreSQL".
+    implementation 'org.flywaydb:flyway-database-postgresql'
+
+    implementation libs.nimbus.jose.jwt
+
+    runtimeOnly 'org.postgresql:postgresql'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation platform(libs.testcontainers.bom)
+    testImplementation libs.testcontainers.junit
+    testImplementation libs.testcontainers.postgresql
 }
-
-// Phase 0 deliberately has no persistence. Adding spring-boot-starter-data-jpa now would make the
-// context fail to start without a database, which would put the smoke test out of reach on a
-// machine with no container runtime. Postgres and Flyway arrive in phase 1.
 
 tasks.named('bootJar') {
     archiveFileName = 'authgate-server.jar'

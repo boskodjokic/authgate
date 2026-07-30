@@ -22,8 +22,10 @@ authgate:
 
 Adding a provider is a config block. There is no per-provider code path.
 
-**Status: phase 0 — scaffold only.** The service starts and reports health. None of the
-behaviour described below is implemented yet. See [Roadmap](#roadmap).
+**Status: phase 1.** The service has a schema, signs RS256 access tokens, and publishes both
+well-known endpoints — so a stock OIDC client can already discover it and verify a token it is
+handed. There is no HTTP route that *issues* one yet: that arrives with magic-link sign-in in
+phase 2, and federation in phase 3. See [Roadmap](#roadmap).
 
 ## Why
 
@@ -59,8 +61,15 @@ signature, issuer and audience against its own pinned configuration. Peeking at 
 claim is safe precisely because it only chooses a verifier — a forged `iss` routes the token to a
 provider that will reject it.
 
-Local tokens are signed with a server-held Ed25519 key, rotated by `kid`, and every one carries a
-`jti` so revocation is immediate rather than eventual.
+Local tokens are signed with a server-held RSA key, identified by an RFC 7638 thumbprint so a
+redeploy that reuses the key keeps every cached JWKS entry valid. Every token carries a `jti`, so
+revocation can name one rather than waiting for expiry.
+
+RS256 is a deliberate choice over Ed25519, which is the better algorithm on merit. Interoperability
+is the property this service sells, and EdDSA does not clear that bar: a good share of OIDC client
+libraries still reject it, and every major provider a caller has already integrated signs with
+RS256. The algorithm is confined to one class and advertised through discovery, so adding ES256
+later is additive rather than a migration.
 
 ## Modules
 
@@ -93,8 +102,8 @@ Neither container is used yet; Postgres is wired up in phase 1 and mail in phase
 | Phase | Deliverable | State |
 |---|---|---|
 | 0 | Gradle scaffold, CI, container build, dev compose | **done** |
-| 1 | Schema, tenants and accounts, Ed25519 issuer, JWKS + discovery | next |
-| 2 | Magic-link sign-in | |
+| 1 | Schema, tenants and accounts, RS256 issuer, JWKS + discovery | **done** |
+| 2 | Magic-link sign-in | next |
 | 3 | Federation: generic OIDC, plus Google/Azure/Okta configuration | |
 | 4 | Role and permission model, admin API | |
 | 5 | Refresh rotation, revocation, reuse detection | |
