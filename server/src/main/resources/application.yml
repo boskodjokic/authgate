@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: authgate
+
+server:
+  port: 8080
+  error:
+    # Stack traces and exception classes are internal detail; an auth service should not narrate
+    # its internals to an unauthenticated caller.
+    include-message: never
+    include-stacktrace: never
+    include-exception: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only health is public. Every other actuator endpoint stays off until phase 4 can put it
+        # behind the admin role.
+        include: health
+  endpoint:
+    health:
+      show-details: never

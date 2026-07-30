@@ -1,0 +1,21 @@
+plugins {
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+}
+
+description = 'AuthGate identity service'
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+// Phase 0 deliberately has no persistence. Adding spring-boot-starter-data-jpa now would make the
+// context fail to start without a database, which would put the smoke test out of reach on a
+// machine with no container runtime. Postgres and Flyway arrive in phase 1.
+
+tasks.named('bootJar') {
+    archiveFileName = 'authgate-server.jar'
+}

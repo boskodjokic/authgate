@@ -1,0 +1,5 @@
+rootProject.name = 'authgate'
+
+// `client-spring` (the resource-server starter) and `demo` arrive with phase 6. They are not
+// declared yet because an empty module is dead weight in every build until it has content.
+include 'server'
