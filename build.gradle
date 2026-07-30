@@ -63,6 +63,27 @@ subprojects {
             events 'failed'
             exceptionFormat 'full'
         }
+
+        // Testcontainers probes /var/run/docker.sock and Docker Desktop's socket, and gives up if
+        // neither is there. Colima — the usual Docker Desktop replacement on macOS — puts its
+        // socket under ~/.colima instead, so the container-backed suites quietly disable
+        // themselves on a machine with a perfectly working daemon. That silent skip is worse than
+        // a failure, because it looks like a pass.
+        //
+        // No-ops anywhere the socket is absent, which includes CI.
+        def colimaSocket = file("${System.getProperty('user.home')}/.colima/default/docker.sock")
+        if (System.getenv('DOCKER_HOST') == null && colimaSocket.exists()) {
+            environment 'DOCKER_HOST', "unix://${colimaSocket}"
+            // Ryuk, the reaper container, bind-mounts the socket by the path the daemon sees
+            // from inside the VM, which is the conventional one rather than the host path above.
+            environment 'TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE', '/var/run/docker.sock'
+            // Testcontainers 1.21's bundled docker-java negotiates API 1.32, and Docker 29 — what
+            // current colima installs — refuses anything below 1.40 with a 400. The connection
+            // succeeds and the handshake fails, which surfaces as "could not find a valid Docker
+            // environment" and sends you looking for a missing socket instead. Pinned only on
+            // this path, so a CI runner keeps whatever its own daemon negotiates.
+            systemProperty 'api.version', '1.44'
+        }
     }
 
     spotless {
