@@ -31,12 +31,21 @@ jobs:
           python3 - <<'PY'
           import glob, re, sys
           total = skipped = 0
+          suites = 0
           for path in glob.glob('**/build/test-results/test/*.xml', recursive=True):
               header = re.search(r'<testsuite[^>]*>', open(path).read()).group(0)
               count = lambda key: int(re.search(key + r'="(\d+)"', header).group(1))
+              name = re.search(r'name="([^"]+)"', header).group(1)
+              suites += 1
               total += count('tests')
               skipped += count('skipped')
-          print(f'{total} tests, {skipped} skipped')
+              print(f'{name}: {count("tests")} tests, {count("skipped")} skipped')
+          print(f'TOTAL: {suites} suites, {total} tests, {skipped} skipped')
+          # Zero results is the failure this check exists to catch as much as a skip is: an
+          # up-to-date or cache-restored test task leaves no XML behind, and "nothing ran" would
+          # otherwise pass silently.
+          if suites == 0:
+              sys.exit('No test results found — the test task did not run.')
           if skipped:
               sys.exit(f'{skipped} of {total} tests skipped on CI — Docker is expected here.')
           PY
