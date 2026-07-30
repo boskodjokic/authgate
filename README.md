@@ -22,10 +22,35 @@ authgate:
 
 Adding a provider is a config block. There is no per-provider code path.
 
-**Status: phase 1.** The service has a schema, signs RS256 access tokens, and publishes both
-well-known endpoints — so a stock OIDC client can already discover it and verify a token it is
-handed. There is no HTTP route that *issues* one yet: that arrives with magic-link sign-in in
-phase 2, and federation in phase 3. See [Roadmap](#roadmap).
+**Status: phase 2.** Passwordless email sign-in works end to end, and the resulting token verifies
+against the published JWKS with any conforming client. Federation to Google, Azure and Okta is
+phase 3. See [Roadmap](#roadmap).
+
+## Signing in
+
+```bash
+# 1. Ask for a link. Always 202 — answering otherwise would let anyone
+#    discover who holds an account, one address at a time.
+curl -X POST localhost:8080/auth/magic-link \
+  -H 'content-type: application/json' \
+  -d '{"tenant":"acme","email":"you@example.com"}'
+
+# 2. Open the emailed link. It carries the token in the URL fragment and
+#    posts it back:
+curl -X POST localhost:8080/auth/magic-link/redeem \
+  -H 'content-type: application/json' \
+  -d '{"token":"<from the link fragment>"}'
+
+# {"access_token":"eyJra...","token_type":"Bearer","expires_in":900}
+```
+
+Redemption is a POST rather than a GET on the emailed URL, which is the obvious design and does
+not survive contact with real mail: link scanners and inbox prefetchers fetch every URL in a
+message before the recipient sees it, and a single-use token is spent by the time it is clicked.
+The token rides in the fragment, which browsers never send to a server — so it also stays out of
+access logs and `Referer` headers.
+
+Tokens are stored as SHA-256 hashes. A leaked table is not a set of usable sign-in links.
 
 ## Why
 
@@ -103,8 +128,8 @@ Neither container is used yet; Postgres is wired up in phase 1 and mail in phase
 |---|---|---|
 | 0 | Gradle scaffold, CI, container build, dev compose | **done** |
 | 1 | Schema, tenants and accounts, RS256 issuer, JWKS + discovery | **done** |
-| 2 | Magic-link sign-in | next |
-| 3 | Federation: generic OIDC, plus Google/Azure/Okta configuration | |
+| 2 | Magic-link sign-in | **done** |
+| 3 | Federation: generic OIDC, plus Google/Azure/Okta configuration | next |
 | 4 | Role and permission model, admin API | |
 | 5 | Refresh rotation, revocation, reuse detection | |
 | 6 | `client-spring` starter and `demo` | |

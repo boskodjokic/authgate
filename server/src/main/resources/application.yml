@@ -23,6 +23,14 @@ authgate:
     # PKCS#8 PEM. Blank generates an ephemeral key at startup, which is fine for development and
     # broken for anything with more than one instance or more than one lifetime.
     private-key: ${AUTHGATE_SIGNING_KEY:}
+  magic-link:
+    # A bearer credential sitting in an inbox, so it does not get to live long.
+    ttl: 10m
+    audience: http://localhost:8080
+    # The page the emailed link opens. It reads the token from the fragment and posts it to
+    # /auth/magic-link/redeem — see MagicLinkController for why redemption is not a GET.
+    redirect-base: http://localhost:4200/signin
+    from: no-reply@localhost
 
 server:
   port: 8080

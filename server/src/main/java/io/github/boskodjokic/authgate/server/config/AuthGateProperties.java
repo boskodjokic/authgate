@@ -12,9 +12,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param accessTokenTtl how long an access token stays valid. Kept short by default: permissions
  *     travel inside the token, so a revoked role is only truly gone once the token expires.
  * @param signing signing key material.
+ * @param magicLink passwordless email sign-in.
  */
 @ConfigurationProperties(prefix = "authgate")
-public record AuthGateProperties(String issuer, Duration accessTokenTtl, Signing signing) {
+public record AuthGateProperties(String issuer, Duration accessTokenTtl, Signing signing, MagicLink magicLink) {
 
     public AuthGateProperties {
         if (issuer == null || issuer.isBlank()) {
@@ -31,6 +32,9 @@ public record AuthGateProperties(String issuer, Duration accessTokenTtl, Signing
         if (signing == null) {
             signing = new Signing(null);
         }
+        if (magicLink == null) {
+            magicLink = new MagicLink(null, null, null, null);
+        }
     }
 
     /**
@@ -41,4 +45,27 @@ public record AuthGateProperties(String issuer, Duration accessTokenTtl, Signing
      *     any deployment where another instance or another lifetime has to verify the result.
      */
     public record Signing(String privateKey) {}
+
+    /**
+     * Passwordless email sign-in.
+     *
+     * @param ttl how long a link stays redeemable. Short by design: it is a bearer credential
+     *     sitting in an inbox.
+     * @param audience the {@code aud} of the access token a redeemed link produces. Fixed by
+     *     configuration rather than taken from the request, or any caller could mint a token for
+     *     a service it was never entitled to reach.
+     * @param redirectBase the page the emailed link points at. It receives the token in the URL
+     *     fragment and posts it back to the redeem endpoint.
+     * @param from the envelope sender for the email.
+     */
+    public record MagicLink(Duration ttl, String audience, String redirectBase, String from) {
+
+        public MagicLink {
+            ttl = ttl == null ? Duration.ofMinutes(10) : ttl;
+            from = from == null || from.isBlank() ? "no-reply@localhost" : from;
+            if (ttl.isNegative() || ttl.isZero()) {
+                throw new IllegalArgumentException("authgate.magic-link.ttl must be positive");
+            }
+        }
+    }
 }
