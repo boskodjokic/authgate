@@ -5,10 +5,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -43,6 +48,13 @@ public class Account {
 
     @Column(nullable = false)
     private boolean superuser;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "account_role",
+            joinColumns = @JoinColumn(name = "account_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles = new LinkedHashSet<>();
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -103,6 +115,16 @@ public class Account {
 
     public void grantSuperuser() {
         this.superuser = true;
+    }
+
+    public Set<Role> getRoles() {
+        return Set.copyOf(roles);
+    }
+
+    /** Replaces the whole role set. Assignment is expressed as "these roles", not as a delta. */
+    public void setRoles(Collection<Role> assigned) {
+        roles.clear();
+        roles.addAll(assigned);
     }
 
     public Instant getCreatedAt() {

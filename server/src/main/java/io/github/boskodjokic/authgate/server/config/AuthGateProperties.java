@@ -16,10 +16,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param signing signing key material.
  * @param magicLink passwordless email sign-in.
  * @param federation external identity providers.
+ * @param bootstrap the first superuser, for a database that has none.
  */
 @ConfigurationProperties(prefix = "authgate")
 public record AuthGateProperties(
-        String issuer, Duration accessTokenTtl, Signing signing, MagicLink magicLink, Federation federation) {
+        String issuer,
+        Duration accessTokenTtl,
+        Signing signing,
+        MagicLink magicLink,
+        Federation federation,
+        Bootstrap bootstrap) {
 
     public AuthGateProperties {
         if (issuer == null || issuer.isBlank()) {
@@ -41,6 +47,9 @@ public record AuthGateProperties(
         }
         if (federation == null) {
             federation = new Federation(null, null);
+        }
+        if (bootstrap == null) {
+            bootstrap = new Bootstrap(null, null);
         }
     }
 
@@ -93,6 +102,20 @@ public record AuthGateProperties(
                 throw new IllegalArgumentException(
                         "authgate.federation.audience must be set when providers are configured");
             }
+        }
+    }
+
+    /**
+     * The first superuser, created only when the database holds no accounts at all.
+     *
+     * @param tenant slug of the tenant to place them in, created if absent
+     * @param email their address. Not a secret: they sign in by magic link like anyone else, so
+     *     this value is safe in a deployment manifest. Blank disables bootstrapping entirely.
+     */
+    public record Bootstrap(String tenant, String email) {
+
+        public Bootstrap {
+            tenant = tenant == null || tenant.isBlank() ? "default" : tenant;
         }
     }
 }

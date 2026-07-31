@@ -64,6 +64,15 @@ public class SigningKeys {
         return key.getKeyID();
     }
 
+    /** The public half as a plain JDK key, for verifiers that take one directly. */
+    public RSAPublicKey publicKey() {
+        try {
+            return key.toRSAPublicKey();
+        } catch (JOSEException e) {
+            throw new IllegalStateException("Could not extract the public key", e);
+        }
+    }
+
     /** The public half, in the shape {@code /.well-known/jwks.json} serves. */
     public JWKSet publicJwkSet() {
         return new JWKSet(key.toPublicJWK());

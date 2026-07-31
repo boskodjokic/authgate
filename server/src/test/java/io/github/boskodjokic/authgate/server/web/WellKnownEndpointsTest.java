@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import io.github.boskodjokic.authgate.server.config.AuthGateProperties;
 import io.github.boskodjokic.authgate.server.crypto.SigningKeys;
+import io.github.boskodjokic.authgate.server.security.SecurityConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -21,7 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * OIDC client reads first.
  */
 @WebMvcTest({DiscoveryController.class, JwksController.class})
-@Import(SigningKeys.class)
+@Import({SigningKeys.class, SecurityConfiguration.class})
 @EnableConfigurationProperties(AuthGateProperties.class)
 @TestPropertySource(properties = {"authgate.issuer=https://auth.example.test", "authgate.access-token-ttl=15m"})
 class WellKnownEndpointsTest {
@@ -67,6 +68,8 @@ class WellKnownEndpointsTest {
         // Belt and braces with SigningKeysTest: that one checks the object, this one checks what
         // actually crosses the wire.
         mockMvc.perform(get("/.well-known/jwks.json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.keys[0].kid").isNotEmpty())
                 .andExpect(jsonPath("$.keys[0].d").doesNotExist())
                 .andExpect(jsonPath("$.keys[0].p").doesNotExist())
                 .andExpect(jsonPath("$.keys[0].q").doesNotExist());

@@ -26,9 +26,9 @@ authgate:
 
 Adding a provider is a config block. There is no per-provider code path.
 
-**Status: phase 3.** Passwordless email sign-in and federated sign-in both work end to end, and the
-resulting token verifies against the published JWKS with any conforming client. Roles and
-permissions are phase 4. See [Roadmap](#roadmap).
+**Status: phase 4.** Both sign-in paths work end to end, tokens carry a permission set, and the
+admin API is protected by that same permission model. Refresh and revocation are phase 5.
+See [Roadmap](#roadmap).
 
 ## Federated sign-in
 
@@ -75,6 +75,36 @@ The token rides in the fragment, which browsers never send to a server — so it
 access logs and `Referer` headers.
 
 Tokens are stored as SHA-256 hashes. A leaked table is not a set of usable sign-in links.
+
+## Permissions
+
+A permission is a `(resource, action)` pair — the two axes an application already thinks in. Roles
+bundle them, accounts hold roles, and the effective set travels inside the access token:
+
+```json
+{ "sub": "…", "tenant": "…", "perms": { "material": ["read", "update"] }, "superuser": false }
+```
+
+A resource server therefore answers "may this caller update a material?" without a callback here.
+The cost is staleness — a withdrawn role stays effective until the token expires — which is why the
+default TTL is minutes and why phase 5 adds revocation.
+
+AuthGate is its own first consumer: the admin API is guarded by Spring's stock
+`oauth2-resource-server` reading that same claim. If a conforming client could not consume these
+tokens, that configuration is where it would break.
+
+```java
+@PreAuthorize("hasAnyAuthority('superuser', 'material:update')")
+```
+
+### Bootstrapping
+
+Every admin route needs a permission, permissions come from an account, and accounts are created
+through the admin API. `authgate.bootstrap.email` breaks the cycle by creating one superuser — and
+only on a database with no accounts at all, so removing that account cannot silently recreate it.
+
+It is not a credential. The bootstrap account signs in by magic link like anyone else, so the value
+is an address and is harmless in a deployment manifest.
 
 ## Why
 
@@ -156,14 +186,14 @@ the log instead, and says so on every use.
 | 1 | Schema, tenants and accounts, RS256 issuer, JWKS + discovery | **done** |
 | 2 | Magic-link sign-in | **done** |
 | 3 | Federation: generic OIDC, plus Google/Azure/Okta configuration | **done** |
-| 4 | Role and permission model, admin API | next |
-| 5 | Refresh rotation, revocation, reuse detection | |
+| 4 | Role and permission model, admin API | **done** |
+| 5 | Refresh rotation, revocation, reuse detection | next |
 | 6 | `client-spring` starter and `demo` | |
 | 7 | Python verifier on PyPI | |
 | 8 | Documentation and a live demo deployment | |
 
-Phases 0–3 are the ones that prove the concept end to end: sign in by email or Google, receive a
-token, verify it from another service.
+Phases 0–4 prove the concept end to end: sign in by email or Google, receive a token carrying your
+permissions, and have another service verify it with a stock OIDC library.
 
 ## License
 

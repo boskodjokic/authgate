@@ -6,10 +6,17 @@ import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.github.boskodjokic.authgate.server.account.Account;
+import io.github.boskodjokic.authgate.server.account.PermissionEntry;
+import io.github.boskodjokic.authgate.server.account.Role;
 import io.github.boskodjokic.authgate.server.config.AuthGateProperties;
 import io.github.boskodjokic.authgate.server.crypto.SigningKeys;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +63,11 @@ public class AccessTokenIssuer {
                 .jwtID(UUID.randomUUID().toString())
                 .claim("tenant", account.getTenant().getId().toString())
                 .claim("email", account.getEmail())
+                // Permissions travel inside the token so a verifier needs no callback here. The
+                // cost is staleness: a revoked role stays effective until the token expires, which
+                // is why the default TTL is minutes rather than hours.
+                .claim("perms", permissionsOf(account))
+                .claim("superuser", account.isSuperuser())
                 .build();
 
         SignedJWT jwt = new SignedJWT(
@@ -71,5 +83,32 @@ public class AccessTokenIssuer {
         }
 
         return new IssuedToken(jwt.serialize(), expiry);
+    }
+
+    /**
+     * Flattens every role's grants into {@code {resource: [actions]}}.
+     *
+     * <p>Sorted, and de-duplicated by construction, so two accounts with the same effective policy
+     * produce byte-identical claims. That makes a token diffable in a bug report instead of
+     * depending on whatever order the database happened to return roles in.
+     */
+    private static Map<String, Set<String>> permissionsOf(Account account) {
+        Map<String, Set<String>> permissions = new TreeMap<>();
+        for (Role role : account.getRoles()) {
+            for (PermissionEntry entry : role.getPermissions()) {
+                permissions
+                        .computeIfAbsent(entry.getResource(), resource -> new TreeSet<>())
+                        .add(entry.getAction());
+            }
+        }
+        return permissions;
+    }
+
+    /** The authority strings a verifier derives from a {@code perms} claim. */
+    public static List<String> authorities(Map<String, ?> perms) {
+        return perms.entrySet().stream()
+                .flatMap(entry -> ((java.util.Collection<?>) entry.getValue())
+                        .stream().map(action -> entry.getKey() + ":" + action))
+                .toList();
     }
 }

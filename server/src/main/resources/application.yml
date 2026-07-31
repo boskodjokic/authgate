@@ -53,6 +53,12 @@ authgate:
     #     # Only for a provider authoritative for the domain. See FederationService.
     #     link-by-verified-email: true
     providers: []
+  bootstrap:
+    # Creates a superuser only when the database has no accounts at all. Not a credential — they
+    # sign in by magic link like anyone else — so it is safe in a deployment manifest. Remove it
+    # once you have made your own accounts.
+    tenant: ${AUTHGATE_BOOTSTRAP_TENANT:default}
+    email: ${AUTHGATE_BOOTSTRAP_EMAIL:}
 
 server:
   port: 8080
