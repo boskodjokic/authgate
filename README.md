@@ -183,9 +183,10 @@ come up with:
 docker compose up -d
 ```
 
-Postgres is required; the mail catcher receives sign-in links in development and its web UI
-is at http://localhost:8025. Without `spring.mail.host` configured the service writes links to
-the log instead, and says so on every use.
+Postgres is required. The mail catcher — [Mailpit](https://mailpit.axllent.org/) — receives
+sign-in links in development, with a web UI at http://localhost:8025; point the service at it with
+`--spring.mail.host=localhost --spring.mail.port=1025`. Without a mail host configured the service
+writes links to its own log instead, and says so on every use.
 
 ## Roadmap
 

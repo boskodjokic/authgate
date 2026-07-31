@@ -1,9 +1,8 @@
-# Local development dependencies. The service itself is expected to run from your IDE or
+# Local development dependencies. Run the service itself from your IDE or with
 # `./gradlew :server:bootRun` against these.
 #
-# Nothing in phase 0 connects to either container yet — Postgres is wired up in phase 1 and
-# Mailhog in phase 2. They are declared now so the dev environment is one command ahead of the
-# code rather than one behind it.
+# Postgres is required. The mail catcher is optional: without `spring.mail.host` pointed at it the
+# service writes sign-in links to its own log instead, and says so on every use.
 
 services:
   postgres:
@@ -24,11 +23,20 @@ services:
 
   # Catches every outbound sign-in email in development so magic links can be clicked without
   # sending real mail. Web UI on http://localhost:8025, SMTP on 1025.
-  mailhog:
-    image: mailhog/mailhog:latest
+  #
+  # Mailpit rather than the better-known MailHog: MailHog is archived upstream and ships amd64
+  # images only, so on an Apple Silicon machine it runs under emulation. Mailpit is the maintained
+  # successor, multi-arch, and listens on the same two ports.
+  mail:
+    image: axllent/mailpit:latest
     ports:
       - "1025:1025"
       - "8025:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   postgres-data:
