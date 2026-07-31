@@ -26,9 +26,9 @@ authgate:
 
 Adding a provider is a config block. There is no per-provider code path.
 
-**Status: phase 4.** Both sign-in paths work end to end, tokens carry a permission set, and the
-admin API is protected by that same permission model. Refresh and revocation are phase 5.
-See [Roadmap](#roadmap).
+**Status: phase 5.** Both sign-in paths work end to end, tokens carry a permission set, sessions
+renew by rotating refresh tokens with reuse detection, and logout withdraws them. What remains is
+packaging: client libraries, docs and a live demo. See [Roadmap](#roadmap).
 
 ## Federated sign-in
 
@@ -65,7 +65,7 @@ curl -X POST localhost:8080/auth/magic-link/redeem \
   -H 'content-type: application/json' \
   -d '{"token":"<from the link fragment>"}'
 
-# {"access_token":"eyJra...","token_type":"Bearer","expires_in":900}
+# {"access_token":"eyJra...","refresh_token":"y3VMRJ...","token_type":"Bearer","expires_in":900}
 ```
 
 Step 2 is what the page at `/signin/` does, and `authgate.magic-link.redirect-base` points there by
@@ -84,6 +84,30 @@ The token rides in the fragment, which browsers never send to a server — so it
 access logs and `Referer` headers.
 
 Tokens are stored as SHA-256 hashes. A leaked table is not a set of usable sign-in links.
+
+## Sessions
+
+Sign-in returns an access token and a refresh token. The access token is short-lived and
+self-contained; the refresh token is long-lived, single-use, and rotated on every renewal.
+
+```bash
+curl -X POST localhost:8080/auth/refresh \
+  -H 'content-type: application/json' \
+  -d '{"refresh_token":"y3VMRJ..."}'
+```
+
+**Reuse detection.** Presenting a refresh token that has already been spent means two parties hold
+it — whoever legitimately rotated it, and whoever copied it. Nothing in the request distinguishes
+them, so the whole token family is withdrawn: the attacker's session ends, and so does the victim's.
+The victim signs in again; the attacker cannot. Families are per sign-in, so one compromised device
+does not end a session on another.
+
+**Logout** withdraws the refresh family and denylists the access token presented with it. Note the
+limit honestly: the denylist is enforced *here*. A resource server verifying against the published
+JWKS — the entire point of the design — cannot see it, so an access token already in the wild stays
+valid there until it expires. The short access TTL is what bounds that window, and revocation is
+authoritative where it matters, at the refresh boundary, where no replacement can be obtained. This
+is how every JWT-issuing provider behaves.
 
 ## Permissions
 
@@ -197,8 +221,8 @@ writes links to its own log instead, and says so on every use.
 | 2 | Magic-link sign-in | **done** |
 | 3 | Federation: generic OIDC, plus Google/Azure/Okta configuration | **done** |
 | 4 | Role and permission model, admin API | **done** |
-| 5 | Refresh rotation, revocation, reuse detection | next |
-| 6 | `client-spring` starter and `demo` | |
+| 5 | Refresh rotation, revocation, reuse detection | **done** |
+| 6 | `client-spring` starter and `demo` | next |
 | 7 | Python verifier on PyPI | |
 | 8 | Documentation and a live demo deployment | |
 

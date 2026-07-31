@@ -19,6 +19,9 @@ spring:
 authgate:
   issuer: http://localhost:8080
   access-token-ttl: 15m
+  # Long-lived on purpose: it is what spares a user from signing in again. Single use plus rotation
+  # plus reuse detection are what make that safe — see SessionService.
+  refresh-token-ttl: 30d
   signing:
     # PKCS#8 PEM. Blank generates an ephemeral key at startup, which is fine for development and
     # broken for anything with more than one instance or more than one lifetime.

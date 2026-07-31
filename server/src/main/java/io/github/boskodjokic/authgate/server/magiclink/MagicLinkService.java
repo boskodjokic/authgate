@@ -5,8 +5,8 @@ import io.github.boskodjokic.authgate.server.account.AccountRepository;
 import io.github.boskodjokic.authgate.server.account.Tenant;
 import io.github.boskodjokic.authgate.server.account.TenantRepository;
 import io.github.boskodjokic.authgate.server.config.AuthGateProperties;
-import io.github.boskodjokic.authgate.server.token.AccessTokenIssuer;
-import io.github.boskodjokic.authgate.server.token.IssuedToken;
+import io.github.boskodjokic.authgate.server.token.Session;
+import io.github.boskodjokic.authgate.server.token.SessionService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -34,7 +34,7 @@ public class MagicLinkService {
     private final AccountRepository accounts;
     private final TenantRepository tenants;
     private final MagicLinkMailer mailer;
-    private final AccessTokenIssuer issuer;
+    private final SessionService sessions;
     private final AuthGateProperties properties;
 
     public MagicLinkService(
@@ -42,13 +42,13 @@ public class MagicLinkService {
             AccountRepository accounts,
             TenantRepository tenants,
             MagicLinkMailer mailer,
-            AccessTokenIssuer issuer,
+            SessionService sessions,
             AuthGateProperties properties) {
         this.links = links;
         this.accounts = accounts;
         this.tenants = tenants;
         this.mailer = mailer;
-        this.issuer = issuer;
+        this.sessions = sessions;
         this.properties = properties;
     }
 
@@ -82,13 +82,13 @@ public class MagicLinkService {
     }
 
     /**
-     * Redeems a link and mints an access token.
+     * Redeems a link and starts a session.
      *
-     * @return the token, or empty if the link is unknown, already used, or expired — the three are
-     *     deliberately indistinguishable to the caller
+     * @return the session, or empty if the link is unknown, already used, or expired — the three
+     *     are deliberately indistinguishable to the caller
      */
     @Transactional
-    public Optional<IssuedToken> redeem(String token) {
+    public Optional<Session> redeem(String token) {
         if (token == null || token.isBlank()) {
             return Optional.empty();
         }
@@ -99,7 +99,7 @@ public class MagicLinkService {
             return Optional.empty();
         }
 
-        return links.findByTokenHash(tokenHash).map(link -> issuer.issue(link.getAccount(), link.getAudience()));
+        return links.findByTokenHash(tokenHash).map(link -> sessions.start(link.getAccount(), link.getAudience()));
     }
 
     private String newToken() {

@@ -13,6 +13,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *     against the token's issuer exactly.
  * @param accessTokenTtl how long an access token stays valid. Kept short by default: permissions
  *     travel inside the token, so a revoked role is only truly gone once the token expires.
+ * @param refreshTokenTtl how long a refresh token stays usable. Long, because it is what spares a
+ *     user from signing in again; single use and rotation are what keep that safe.
  * @param signing signing key material.
  * @param magicLink passwordless email sign-in.
  * @param federation external identity providers.
@@ -22,6 +24,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AuthGateProperties(
         String issuer,
         Duration accessTokenTtl,
+        Duration refreshTokenTtl,
         Signing signing,
         MagicLink magicLink,
         Federation federation,
@@ -38,6 +41,15 @@ public record AuthGateProperties(
         }
         if (accessTokenTtl == null || accessTokenTtl.isNegative() || accessTokenTtl.isZero()) {
             throw new IllegalArgumentException("authgate.access-token-ttl must be positive");
+        }
+        refreshTokenTtl = refreshTokenTtl == null ? Duration.ofDays(30) : refreshTokenTtl;
+        if (refreshTokenTtl.isNegative() || refreshTokenTtl.isZero()) {
+            throw new IllegalArgumentException("authgate.refresh-token-ttl must be positive");
+        }
+        if (refreshTokenTtl.compareTo(accessTokenTtl) < 0) {
+            // A refresh token that dies before the access token it renews is useless, and the
+            // symptom — sessions ending early for no visible reason — is miserable to diagnose.
+            throw new IllegalArgumentException("authgate.refresh-token-ttl must exceed access-token-ttl");
         }
         if (signing == null) {
             signing = new Signing(null);

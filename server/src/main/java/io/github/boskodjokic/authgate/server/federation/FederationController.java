@@ -1,11 +1,8 @@
 package io.github.boskodjokic.authgate.server.federation;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.boskodjokic.authgate.server.token.IssuedToken;
+import io.github.boskodjokic.authgate.server.token.TokenResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import java.time.Duration;
-import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -65,22 +62,4 @@ public class FederationController {
      * @param token the provider's ID token, compact-serialised
      */
     public record ExchangeRequest(@NotBlank String token) {}
-
-    /**
-     * An issued access token, shaped like an OAuth 2 token response.
-     *
-     * @param accessToken the signed JWT
-     * @param tokenType always {@code Bearer}
-     * @param expiresIn seconds until expiry
-     */
-    public record TokenResponse(
-            @JsonProperty("access_token") String accessToken,
-            @JsonProperty("token_type") String tokenType,
-            @JsonProperty("expires_in") long expiresIn) {
-
-        static TokenResponse of(IssuedToken token) {
-            long seconds = Duration.between(Instant.now(), token.expiresAt()).toSeconds();
-            return new TokenResponse(token.value(), "Bearer", Math.max(seconds, 0));
-        }
-    }
 }

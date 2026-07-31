@@ -7,8 +7,8 @@ import io.github.boskodjokic.authgate.server.account.FederatedIdentityRepository
 import io.github.boskodjokic.authgate.server.account.Tenant;
 import io.github.boskodjokic.authgate.server.account.TenantRepository;
 import io.github.boskodjokic.authgate.server.config.AuthGateProperties;
-import io.github.boskodjokic.authgate.server.token.AccessTokenIssuer;
-import io.github.boskodjokic.authgate.server.token.IssuedToken;
+import io.github.boskodjokic.authgate.server.token.Session;
+import io.github.boskodjokic.authgate.server.token.SessionService;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ public class FederationService {
     private final FederatedIdentityRepository identities;
     private final AccountRepository accounts;
     private final TenantRepository tenants;
-    private final AccessTokenIssuer issuer;
+    private final SessionService sessions;
     private final AuthGateProperties properties;
 
     public FederationService(
@@ -33,23 +33,23 @@ public class FederationService {
             FederatedIdentityRepository identities,
             AccountRepository accounts,
             TenantRepository tenants,
-            AccessTokenIssuer issuer,
+            SessionService sessions,
             AuthGateProperties properties) {
         this.registry = registry;
         this.identities = identities;
         this.accounts = accounts;
         this.tenants = tenants;
-        this.issuer = issuer;
+        this.sessions = sessions;
         this.properties = properties;
     }
 
     /**
-     * Verifies a provider token and issues a local access token for the linked account.
+     * Verifies a provider token and starts a session for the linked account.
      *
      * @throws FederationException if the token is invalid or no account is linked
      */
     @Transactional
-    public IssuedToken exchange(String providerToken) {
+    public Session exchange(String providerToken) {
         if (providerToken == null || providerToken.isBlank()) {
             throw new FederationException("token must not be blank");
         }
@@ -65,7 +65,7 @@ public class FederationService {
         if (!account.isActive()) {
             throw new FederationException("account is not active");
         }
-        return issuer.issue(account, properties.federation().audience());
+        return sessions.start(account, properties.federation().audience());
     }
 
     /**

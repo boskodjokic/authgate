@@ -32,6 +32,7 @@ class SigningKeysTest {
         return new AuthGateProperties(
                 "https://auth.example.test",
                 Duration.ofMinutes(15),
+                Duration.ofDays(30),
                 new AuthGateProperties.Signing(pem),
                 null,
                 null,

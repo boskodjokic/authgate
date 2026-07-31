@@ -3,6 +3,7 @@ package io.github.boskodjokic.authgate.server.security;
 import io.github.boskodjokic.authgate.server.config.AuthGateProperties;
 import io.github.boskodjokic.authgate.server.crypto.SigningKeys;
 import io.github.boskodjokic.authgate.server.token.AccessTokenIssuer;
+import io.github.boskodjokic.authgate.server.token.SessionService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -60,8 +66,14 @@ public class SecurityConfiguration {
                         // signed in.
                         .requestMatchers(HttpMethod.GET, "/signin/**")
                         .permitAll()
-                        // The sign-in routes are how a caller obtains a token in the first place.
-                        // They defend themselves: see MagicLinkService and FederationService.
+                        // Ending a session requires proving you hold it. Left public, anyone could
+                        // end anyone else's by guessing at refresh tokens.
+                        .requestMatchers(HttpMethod.POST, "/auth/logout")
+                        .authenticated()
+                        // The remaining sign-in routes are how a caller obtains a token in the
+                        // first place, and /auth/refresh is reached when the access token has
+                        // usually already expired. They defend themselves: see MagicLinkService,
+                        // FederationService and SessionService.
                         .requestMatchers(HttpMethod.POST, "/auth/**")
                         .permitAll()
                         .anyRequest()
@@ -88,16 +100,39 @@ public class SecurityConfiguration {
      * our own public URL from inside the container.
      */
     @Bean
-    JwtDecoder jwtDecoder(SigningKeys keys, AuthGateProperties properties) {
+    JwtDecoder jwtDecoder(SigningKeys keys, AuthGateProperties properties, SessionService sessions) {
         // One key, so the public key is handed over directly. When rotation lands and there are
         // several, this becomes a JWK source keyed by kid — the header already carries one.
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(keys.publicKey())
                 .signatureAlgorithm(SignatureAlgorithm.RS256)
                 .build();
         // Issuer is checked as well as signature and expiry: a correctly signed token is not
-        // automatically one we minted for this deployment.
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.issuer()));
+        // automatically one we minted for this deployment. The denylist is checked alongside, so a
+        // token withdrawn by logout stops working here at once rather than at expiry.
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefaultWithIssuer(properties.issuer()), new NotRevoked(sessions)));
         return decoder;
+    }
+
+    /**
+     * Rejects an access token that has been withdrawn.
+     *
+     * <p>Only this service consults the denylist. A resource server verifying against the published
+     * JWKS — which is the entire point of the design — cannot see it, so a token already in the
+     * wild stays valid there until it expires. That window is what the short access TTL bounds, and
+     * it is how every JWT-issuing provider behaves; revocation is authoritative at the refresh
+     * boundary, where no new token can be obtained.
+     */
+    private record NotRevoked(SessionService sessions) implements OAuth2TokenValidator<Jwt> {
+
+        private static final OAuth2Error REVOKED = new OAuth2Error("invalid_token", "The token has been revoked", null);
+
+        @Override
+        public OAuth2TokenValidatorResult validate(Jwt token) {
+            return sessions.isRevoked(token.getId())
+                    ? OAuth2TokenValidatorResult.failure(REVOKED)
+                    : OAuth2TokenValidatorResult.success();
+        }
     }
 
     /**

@@ -1,12 +1,10 @@
 package io.github.boskodjokic.authgate.server.magiclink;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.boskodjokic.authgate.server.token.IssuedToken;
+import io.github.boskodjokic.authgate.server.token.Session;
+import io.github.boskodjokic.authgate.server.token.TokenResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,12 +45,12 @@ public class MagicLinkController {
     /** Redeem a link. */
     @PostMapping("/redeem")
     public ResponseEntity<TokenResponse> redeem(@Valid @RequestBody RedeemRequest body) {
-        Optional<IssuedToken> token = service.redeem(body.token());
+        Optional<Session> session = service.redeem(body.token());
 
         // One response for unknown, spent and expired alike. Telling them apart would let a
         // holder of a stolen link learn whether it had already been used, and by extension
         // whether the victim has signed in yet.
-        return token.map(issued -> ResponseEntity.ok(TokenResponse.of(issued)))
+        return session.map(started -> ResponseEntity.ok(TokenResponse.of(started)))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
@@ -70,22 +68,4 @@ public class MagicLinkController {
      * @param token the value taken from the emailed link's fragment
      */
     public record RedeemRequest(@NotBlank String token) {}
-
-    /**
-     * An issued access token, shaped like an OAuth 2 token response.
-     *
-     * @param accessToken the signed JWT
-     * @param tokenType always {@code Bearer}
-     * @param expiresIn seconds until expiry
-     */
-    public record TokenResponse(
-            @JsonProperty("access_token") String accessToken,
-            @JsonProperty("token_type") String tokenType,
-            @JsonProperty("expires_in") long expiresIn) {
-
-        static TokenResponse of(IssuedToken token) {
-            long seconds = Duration.between(Instant.now(), token.expiresAt()).toSeconds();
-            return new TokenResponse(token.value(), "Bearer", Math.max(seconds, 0));
-        }
-    }
 }

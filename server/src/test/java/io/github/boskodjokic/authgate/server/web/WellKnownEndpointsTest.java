@@ -8,12 +8,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import io.github.boskodjokic.authgate.server.config.AuthGateProperties;
 import io.github.boskodjokic.authgate.server.crypto.SigningKeys;
 import io.github.boskodjokic.authgate.server.security.SecurityConfiguration;
+import io.github.boskodjokic.authgate.server.token.SessionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -29,6 +31,14 @@ class WellKnownEndpointsTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    /**
+     * The security configuration consults this to reject revoked tokens, which pulls in the
+     * repositories a web slice deliberately does not have. Neither endpoint under test is
+     * authenticated, so a stand-in is enough.
+     */
+    @MockitoBean
+    private SessionService sessions;
 
     @Test
     void discoveryDocumentIsServedAtTheSpecifiedPath() throws Exception {
