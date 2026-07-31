@@ -68,6 +68,15 @@ curl -X POST localhost:8080/auth/magic-link/redeem \
 # {"access_token":"eyJra...","token_type":"Bearer","expires_in":900}
 ```
 
+Step 2 is what the page at `/signin/` does, and `authgate.magic-link.redirect-base` points there by
+default so the flow works from a fresh checkout. It is deliberately about fifty lines of plain HTML
+and vanilla JavaScript — the reference implementation of the redemption step, meant to be read and
+replaced by your own application's page rather than depended on.
+
+The page is served under a Content-Security-Policy that permits no inline script, which is why its
+JavaScript and CSS live in separate files. This origin also serves the identity service, so an
+injected script here would be a compromise of identity rather than a defacement.
+
 Redemption is a POST rather than a GET on the emailed URL, which is the obvious design and does
 not survive contact with real mail: link scanners and inbox prefetchers fetch every URL in a
 message before the recipient sees it, and a single-use token is spent by the time it is clicked.

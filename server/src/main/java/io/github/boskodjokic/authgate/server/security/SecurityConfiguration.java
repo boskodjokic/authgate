@@ -56,6 +56,10 @@ public class SecurityConfiguration {
                         // caller as a 401 — a misleading answer to a request that was permitted.
                         .requestMatchers("/error")
                         .permitAll()
+                        // The redemption page is reached by someone who is, by definition, not yet
+                        // signed in.
+                        .requestMatchers(HttpMethod.GET, "/signin/**")
+                        .permitAll()
                         // The sign-in routes are how a caller obtains a token in the first place.
                         // They defend themselves: see MagicLinkService and FederationService.
                         .requestMatchers(HttpMethod.POST, "/auth/**")
@@ -63,6 +67,18 @@ public class SecurityConfiguration {
                         .anyRequest()
                         .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                // This origin serves both the identity service and a page, so script injection
+                // here would be a compromise of identity rather than a defacement. The policy
+                // allows no inline script and no inline style, which is why the sign-in page keeps
+                // its JavaScript and CSS in separate files.
+                .headers(headers -> headers.contentSecurityPolicy(
+                                csp -> csp.policyDirectives("default-src 'none'; script-src 'self'; style-src 'self'; "
+                                        + "connect-src 'self'; img-src 'self'; base-uri 'none'; "
+                                        + "form-action 'none'; frame-ancestors 'none'"))
+                        .frameOptions(frame -> frame.deny())
+                        .referrerPolicy(referrer -> referrer.policy(
+                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
+                                        .ReferrerPolicy.NO_REFERRER)))
                 .build();
     }
 

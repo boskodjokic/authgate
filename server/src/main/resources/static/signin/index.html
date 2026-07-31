@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      Nothing on this page should ever be indexed or preserved: the URL that reaches it carries a
+      single-use credential in its fragment.
+    -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Sign in</title>
+    <link rel="stylesheet" href="signin.css" />
+  </head>
+  <body>
+    <main class="card">
+      <h1>AuthGate</h1>
+
+      <p id="status" class="status">Redeeming your sign-in link&hellip;</p>
+
+      <div id="result" class="result" hidden>
+        <p class="label">Access token</p>
+        <!--
+          Shown because this page is the service's own reference implementation, and a token you
+          can copy is what makes the flow demonstrable from a fresh checkout. A real deployment
+          points authgate.magic-link.redirect-base at its own page, which would hand the token to
+          the application instead of displaying it.
+        -->
+        <textarea id="token" class="token" readonly rows="6"></textarea>
+        <button id="copy" type="button">Copy</button>
+      </div>
+
+      <p class="footnote">
+        This page is the reference implementation of the redemption step. It reads the token from
+        the URL fragment and posts it to <code>/auth/magic-link/redeem</code>. Roughly fifty lines,
+        deliberately, so that an integrator can read it and write their own.
+      </p>
+    </main>
+
+    <script src="signin.js"></script>
+  </body>
+</html>

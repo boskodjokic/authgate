@@ -7,3 +7,6 @@ bin/
 .idea/
 *.iml
 .vscode/
+
+# Local tooling config, not part of the project
+.claude/

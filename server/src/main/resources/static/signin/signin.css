@@ -1,0 +1,112 @@
+/* Kept in a file rather than a <style> block so the page needs no 'unsafe-inline' in its CSP. */
+
+:root {
+  color-scheme: light dark;
+  --fg: #1a1a1a;
+  --muted: #6b6b6b;
+  --bg: #fafafa;
+  --card: #ffffff;
+  --line: #e4e4e4;
+  --error: #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #ececec;
+    --muted: #a0a0a0;
+    --bg: #161616;
+    --card: #1f1f1f;
+    --line: #333333;
+    --error: #f2b8b5;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 1.5rem;
+}
+
+.card {
+  width: min(34rem, 100%);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 2rem;
+}
+
+h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+.status {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.status.error {
+  color: var(--error);
+}
+
+.result {
+  margin-top: 1.25rem;
+}
+
+.label {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.token {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  word-break: break-all;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.6rem;
+  resize: vertical;
+}
+
+button {
+  margin-top: 0.6rem;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--muted);
+}
+
+.footnote {
+  margin: 1.75rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.95em;
+}
