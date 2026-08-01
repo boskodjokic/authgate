@@ -85,10 +85,10 @@ curl -X POST localhost:8080/auth/magic-link/redeem \
 # {"access_token":"eyJra...","refresh_token":"y3VMRJ...","token_type":"Bearer","expires_in":900}
 ```
 
-Step 2 is what the page at `/signin/` does, and `authgate.magic-link.redirect-base` points there by
-default so the flow works from a fresh checkout. It is deliberately about fifty lines of plain HTML
-and vanilla JavaScript — the reference implementation of the redemption step, meant to be read and
-replaced by your own application's page rather than depended on.
+Step 2 is what a page does for the user. Two ship here: the [console](#console), which
+`redirect-base` points at by default, and `/signin/`, which does the same redemption and nothing
+else — about fifty lines of plain HTML and vanilla JavaScript, meant to be read and replaced by
+your own application's page rather than depended on.
 
 The page is served under a Content-Security-Policy that permits no inline script, which is why its
 JavaScript and CSS live in separate files. This origin also serves the identity service, so an
@@ -137,7 +137,7 @@ bundle them, accounts hold roles, and the effective set travels inside the acces
 
 A resource server therefore answers "may this caller update a material?" without a callback here.
 The cost is staleness — a withdrawn role stays effective until the token expires — which is why the
-default TTL is minutes and why phase 5 adds revocation.
+default TTL is minutes and why revocation acts at the [refresh boundary](#sessions).
 
 AuthGate is its own first consumer: the admin API is guarded by Spring's stock
 `oauth2-resource-server` reading that same claim. If a conforming client could not consume these
