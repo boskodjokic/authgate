@@ -26,10 +26,10 @@ authgate:
 
 Adding a provider is a config block. There is no per-provider code path.
 
-**Status: phase 5, plus an admin console.** Both sign-in paths work end to end, tokens carry a
-permission set, sessions renew by rotating refresh tokens with reuse detection, and there is a
-browser console for tenants, accounts and roles. What remains is packaging: client libraries, docs
-and a live demo. See [Roadmap](#roadmap).
+**Status: phase 6.** Both sign-in paths work end to end, tokens carry a permission set, sessions
+renew with reuse detection, there is a browser console, and a Spring starter plus a sample service
+that verifies real tokens issued by a real AuthGate. What remains is the Python SDK, docs and a
+live demo. See [Roadmap](#roadmap).
 
 ## Console
 
@@ -126,6 +126,43 @@ valid there until it expires. The short access TTL is what bounds that window, a
 authoritative where it matters, at the refresh boundary, where no replacement can be obtained. This
 is how every JWT-issuing provider behaves.
 
+## Consuming from Spring
+
+Spring already verifies an AuthGate token with nothing but an issuer URL — that is the point of
+publishing standard discovery and JWKS, and the starter is a convenience rather than a requirement:
+
+```yaml
+spring.security.oauth2.resourceserver.jwt.issuer-uri: https://auth.example.com
+```
+
+What the starter adds is the two things a hand-written configuration usually gets wrong:
+
+```yaml
+authgate.client:
+  issuer: https://auth.example.com
+  audience: https://api.example.com     # required
+```
+
+**Audience validation.** Spring does not check `aud`. On `issuer-uri` alone a service accepts every
+token that issuer ever minted, including tokens meant for a different service — so one careless
+resource server becomes a way into all of them. The property is required precisely because there is
+no safe default for "any".
+
+**The permission model.** The `perms` claim becomes authorities, and the caller arrives typed:
+
+```java
+@GetMapping("/materials")
+@PreAuthorize("hasAnyAuthority('superuser', 'material:read')")
+List<Material> list(@AuthenticationPrincipal Identity caller) {
+    return materials.forTenant(caller.tenantId());
+}
+```
+
+`demo` is that service, and its test is the one worth reading: it starts a real AuthGate against a
+real Postgres, starts the demo separately, and has the demo verify a token it was handed — sharing
+no database, no session store and no code beyond the starter. It also checks that a token for
+another audience and a token signed by a different key are both refused.
+
 ## Permissions
 
 A permission is a `(resource, action)` pair — the two axes an application already thinks in. Roles
@@ -205,8 +242,8 @@ later is additive rather than a migration.
 | Module | What it is |
 |---|---|
 | `server` | the identity service — deployable, published as a container image |
-| `client-spring` | resource-server starter for Java consumers *(phase 6)* |
-| `demo` | a sample protected API using `client-spring` *(phase 6)* |
+| `client-spring` | resource-server starter for Java consumers |
+| `demo` | a sample protected API using `client-spring`; not published |
 
 A thin Python verifier ships separately as [`authgate` on PyPI](https://pypi.org/project/authgate/)
 *(phase 7)*.
@@ -239,8 +276,8 @@ writes links to its own log instead, and says so on every use.
 | 3 | Federation: generic OIDC, plus Google/Azure/Okta configuration | **done** |
 | 4 | Role and permission model, admin API | **done** |
 | 5 | Refresh rotation, revocation, reuse detection | **done** |
-| 6 | `client-spring` starter and `demo` | next |
-| 7 | Python verifier on PyPI | |
+| 6 | `client-spring` starter and `demo` | **done** |
+| 7 | Python verifier on PyPI | next |
 | 8 | Documentation and a live demo deployment | |
 
 Phases 0–4 prove the concept end to end: sign in by email or Google, receive a token carrying your

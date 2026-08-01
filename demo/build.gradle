@@ -1,0 +1,26 @@
+plugins {
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+}
+
+description = 'A sample protected API consuming the AuthGate starter'
+
+dependencies {
+    implementation project(':client-spring')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Test-only, and pointed at deliberately: the demo's whole job is to be verified against the
+    // real service issuing real tokens rather than against a fixture that agrees with itself.
+    testImplementation project(':server')
+    // The server declares these as `implementation`, so they do not reach here transitively — and
+    // that is correct: the demo's own code must not touch a database or a signing library. The
+    // test does, to seed accounts and to forge a token from the wrong key.
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    testImplementation libs.nimbus.jose.jwt
+    testRuntimeOnly 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation platform(libs.testcontainers.bom)
+    testImplementation libs.testcontainers.junit
+    testImplementation libs.testcontainers.postgresql
+}

@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: authgate-demo
+
+authgate:
+  client:
+    # The only address this service needs. Discovery and JWKS are read from here.
+    issuer: ${AUTHGATE_ISSUER:http://localhost:8080}
+    # Required. Without it this service would accept any token AuthGate ever minted, including
+    # tokens issued to a different service.
+    audience: ${AUTHGATE_AUDIENCE:http://localhost:8080}
+
+server:
+  port: 8090

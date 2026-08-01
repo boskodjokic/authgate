@@ -1,0 +1,22 @@
+plugins {
+    alias(libs.plugins.spring.dependency.management)
+}
+
+description = 'AuthGate resource-server starter for Spring consumers'
+
+// A library, not an application: no Spring Boot plugin and no bootJar. Versions still come from
+// the Boot BOM so a consumer's Spring version and this one cannot disagree.
+apply plugin: 'java-library'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${libs.versions.springBoot.get()}"
+    }
+}
+
+dependencies {
+    api 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
