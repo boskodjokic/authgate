@@ -26,9 +26,26 @@ authgate:
 
 Adding a provider is a config block. There is no per-provider code path.
 
-**Status: phase 5.** Both sign-in paths work end to end, tokens carry a permission set, sessions
-renew by rotating refresh tokens with reuse detection, and logout withdraws them. What remains is
-packaging: client libraries, docs and a live demo. See [Roadmap](#roadmap).
+**Status: phase 5, plus an admin console.** Both sign-in paths work end to end, tokens carry a
+permission set, sessions renew by rotating refresh tokens with reuse detection, and there is a
+browser console for tenants, accounts and roles. What remains is packaging: client libraries, docs
+and a live demo. See [Roadmap](#roadmap).
+
+## Console
+
+`/console/` is a browser front end for everything the admin API exposes. Sign in with a magic
+link and it lands you there — `authgate.magic-link.redirect-base` points at it by default, so a
+fresh checkout has somewhere useful to arrive.
+
+It is plain HTML and vanilla JavaScript served from the jar: no framework, no build step, one
+deployable. The access token lives in a JavaScript variable and nowhere else — not `localStorage`,
+not a cookie. A cookie would reintroduce CSRF, which this service is free of precisely because it
+has no ambient credential; storage would leave the token readable by any script that ever runs on
+this origin, which also serves the identity service. The cost is that a reload signs you out, and
+when signing in is one emailed link that is a fair trade.
+
+`/signin/` remains the same flow with nothing attached — about fifty lines, meant to be read by an
+integrator writing their own page.
 
 ## Federated sign-in
 

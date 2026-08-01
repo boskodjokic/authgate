@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>AuthGate console</title>
+    <link rel="stylesheet" href="console.css" />
+  </head>
+  <body>
+    <!-- Signed out ------------------------------------------------------ -->
+    <section id="signin" class="centre" hidden>
+      <div class="card">
+        <h1>AuthGate</h1>
+        <p class="muted">Sign in to the admin console.</p>
+
+        <form id="signin-form">
+          <label for="tenant">Tenant</label>
+          <input id="tenant" name="tenant" value="default" autocomplete="off" required />
+
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="you@example.com" required />
+
+          <button type="submit">Email me a link</button>
+        </form>
+
+        <p id="signin-status" class="status" hidden></p>
+      </div>
+    </section>
+
+    <!-- Signed in ------------------------------------------------------- -->
+    <div id="app" hidden>
+      <header class="bar">
+        <strong>AuthGate</strong>
+        <span class="grow"></span>
+        <span id="whoami" class="muted"></span>
+        <button id="signout" type="button" class="link">Sign out</button>
+      </header>
+
+      <main>
+        <p id="error" class="status error" hidden></p>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Tenants</h2>
+            <form id="tenant-form" class="inline">
+              <input name="slug" placeholder="slug" required />
+              <input name="name" placeholder="Name" required />
+              <button type="submit">Add</button>
+            </form>
+          </div>
+          <table id="tenants"></table>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Accounts <span id="scope" class="muted"></span></h2>
+            <form id="account-form" class="inline">
+              <input name="email" type="email" placeholder="email" required />
+              <input name="displayName" placeholder="Name" />
+              <button type="submit">Add</button>
+            </form>
+          </div>
+          <table id="accounts"></table>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Roles</h2>
+            <form id="role-form" class="inline">
+              <input name="name" placeholder="role name" required />
+              <input name="permissions" placeholder="material:read, material:update" required />
+              <button type="submit">Save</button>
+            </form>
+          </div>
+          <table id="roles"></table>
+          <p class="muted small">
+            Saving replaces a role's whole grant set. Permissions are
+            <code>resource:action</code> pairs, comma separated.
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <script src="console.js"></script>
+  </body>
+</html>

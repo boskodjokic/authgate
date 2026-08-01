@@ -32,9 +32,11 @@ authgate:
     audience: http://localhost:8080
     # The page the emailed link opens. It reads the token from the fragment and posts it to
     # /auth/magic-link/redeem — see MagicLinkController for why redemption is not a GET.
-    # Defaults to the reference page this service serves, so the flow works from a fresh checkout.
-    # Point it at your own application's page in a real deployment.
-    redirect-base: ${AUTHGATE_REDIRECT_BASE:http://localhost:8080/signin/}
+    # Defaults to the admin console, so a fresh checkout signs in and lands somewhere useful.
+    # /signin/ is the same flow with nothing else attached — about fifty lines, meant to be read
+    # by an integrator writing their own. Point this at your own application's page in a real
+    # deployment.
+    redirect-base: ${AUTHGATE_REDIRECT_BASE:http://localhost:8080/console/}
     from: no-reply@localhost
   federation:
     # `aud` of the token a federated exchange produces.

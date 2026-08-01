@@ -62,9 +62,9 @@ public class SecurityConfiguration {
                         // caller as a 401 — a misleading answer to a request that was permitted.
                         .requestMatchers("/error")
                         .permitAll()
-                        // The redemption page is reached by someone who is, by definition, not yet
-                        // signed in.
-                        .requestMatchers(HttpMethod.GET, "/signin/**")
+                        // Both pages are reached by someone who is, by definition, not yet signed
+                        // in. They are shells: every call they make is authenticated on its own.
+                        .requestMatchers(HttpMethod.GET, "/signin/**", "/console/**")
                         .permitAll()
                         // Ending a session requires proving you hold it. Left public, anyone could
                         // end anyone else's by guessing at refresh tokens.

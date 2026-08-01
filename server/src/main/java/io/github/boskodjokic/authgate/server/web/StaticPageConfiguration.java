@@ -5,7 +5,7 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Maps {@code /signin} onto the sign-in page.
+ * Maps the tidy URLs of the two static pages onto their {@code index.html}.
  *
  * <p>Spring Boot serves {@code static/signin/index.html} at its literal path, but does not treat
  * {@code index.html} as a directory index for anything below the root — so {@code /signin/} is a
@@ -21,5 +21,7 @@ public class StaticPageConfiguration implements WebMvcConfigurer {
         // Both spellings: a link is as likely to be written without the trailing slash as with it.
         registry.addViewController("/signin").setViewName("forward:/signin/index.html");
         registry.addViewController("/signin/").setViewName("forward:/signin/index.html");
+        registry.addViewController("/console").setViewName("forward:/console/index.html");
+        registry.addViewController("/console/").setViewName("forward:/console/index.html");
     }
 }

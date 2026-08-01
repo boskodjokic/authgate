@@ -79,6 +79,28 @@ class AuthGateApplicationTests {
     }
 
     @Test
+    void theConsoleIsServedAtItsTidyUrl() {
+        for (String path : new String[] {"/console", "/console/", "/console/index.html"}) {
+            ResponseEntity<String> response = restTemplate.getForEntity(url(path), String.class);
+
+            assertThat(response.getStatusCode()).as(path).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).as(path).contains("AuthGate console");
+        }
+    }
+
+    @Test
+    void theConsoleShellIsPublicButItsDataIsNot() {
+        // The page is a shell with no credential in it; every call it makes is authenticated on
+        // its own. Serving it anonymously is what lets someone sign in through it at all.
+        assertThat(restTemplate.getForEntity(url("/console/"), String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(restTemplate
+                        .getForEntity(url("/admin/tenants"), String.class)
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     void theSignInPageAssetsAreServedAnonymously() {
         // The recipient of a sign-in link is by definition not yet authenticated.
         assertThat(restTemplate
