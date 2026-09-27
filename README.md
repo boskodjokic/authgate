@@ -26,10 +26,10 @@ authgate:
 
 Adding a provider is a config block. There is no per-provider code path.
 
-**Status: phase 6.** Both sign-in paths work end to end, tokens carry a permission set, sessions
-renew with reuse detection, there is a browser console, and a Spring starter plus a sample service
-that verifies real tokens issued by a real AuthGate. What remains is the Python SDK, docs and a
-live demo. See [Roadmap](#roadmap).
+**Status: phase 7.** Both sign-in paths work end to end, tokens carry a permission set, sessions
+renew with reuse detection, there is a browser console, a Spring starter plus a sample service
+that verifies real tokens issued by a real AuthGate, and a Python verifier on PyPI. What remains is
+docs and a live demo. See [Roadmap](#roadmap).
 
 ## Console
 
@@ -245,8 +245,8 @@ later is additive rather than a migration.
 | `client-spring` | resource-server starter for Java consumers |
 | `demo` | a sample protected API using `client-spring`; not published |
 
-A thin Python verifier ships separately as [`authgate` on PyPI](https://pypi.org/project/authgate/)
-*(phase 7)*.
+A thin Python verifier ships separately as [`authgate-client` on PyPI](https://pypi.org/project/authgate-client/),
+from [authgate-python](https://github.com/boskodjokic/authgate-python).
 
 ## Build
 
@@ -277,8 +277,8 @@ writes links to its own log instead, and says so on every use.
 | 4 | Role and permission model, admin API | **done** |
 | 5 | Refresh rotation, revocation, reuse detection | **done** |
 | 6 | `client-spring` starter and `demo` | **done** |
-| 7 | Python verifier on PyPI | next |
-| 8 | Documentation and a live demo deployment | |
+| 7 | Python verifier on PyPI | **done** |
+| 8 | Documentation and a live demo deployment | next |
 
 Phases 0–4 prove the concept end to end: sign in by email or Google, receive a token carrying your
 permissions, and have another service verify it with a stock OIDC library.
