@@ -28,8 +28,8 @@ Adding a provider is a config block. There is no per-provider code path.
 
 **Status: phase 7.** Both sign-in paths work end to end, tokens carry a permission set, sessions
 renew with reuse detection, there is a browser console, a Spring starter plus a sample service
-that verifies real tokens issued by a real AuthGate, and a Python verifier on PyPI. What remains is
-docs and a live demo. See [Roadmap](#roadmap).
+that verifies real tokens issued by a real AuthGate, and a Python verifier on PyPI. A documentation
+site and a hosted demo are deferred. See [Roadmap](#roadmap).
 
 ## Console
 
@@ -278,7 +278,7 @@ writes links to its own log instead, and says so on every use.
 | 5 | Refresh rotation, revocation, reuse detection | **done** |
 | 6 | `client-spring` starter and `demo` | **done** |
 | 7 | Python verifier on PyPI | **done** |
-| 8 | Documentation and a live demo deployment | next |
+| 8 | Documentation and a live demo deployment | deferred |
 
 Phases 0–4 prove the concept end to end: sign in by email or Google, receive a token carrying your
 permissions, and have another service verify it with a stock OIDC library.
